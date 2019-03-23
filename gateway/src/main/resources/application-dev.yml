@@ -1,0 +1,53 @@
+spring:
+  cloud:
+    gateway:
+      default-filters:
+      #-------------指向注册中心的http请求的uri前缀为 lb://, websocket请求的uri前缀为ws://
+      routes:
+      #------------------------------system--------------------------------
+      - id: system
+        uri: lb://system
+        predicates:
+        - Path= /system/**
+      #这里是将/system/xx的请求转发到 lb://system/xx 会去掉system的前缀，这个功能与zuul的stripPrefix（去掉前缀）相同
+      # - RewritePath的方法位于/org/springframework/cloud/gateway/filter/factory/RewritePathGatewayFilterFactory.java
+        filters:
+        - RewritePath=/system/(?<segment>.*), /$\{segment}
+      #-------------------------------auth------------------------------------
+      - id: auth
+        uri: lb://auth
+        predicates:
+        - Path= /auth/**
+        filters:
+        - RewritePath=/auth/(?<segment>.*), /$\{segment}
+
+server:
+  port: 40000
+
+eureka:
+  server:
+    port: 30000
+  instance:
+    hostname: 127.0.0.1
+    prefer-ip-address: true
+    lease-expiration-duration-in-seconds: 45
+  client:
+    register-with-eureka: true
+    registry-fetch-interval-seconds: 30
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${eureka.server.port}/eureka/
+
+
+ribbon:
+  ConnectTimeout: 60000
+  ReadTimeout:  60000
+
+hystrix:
+    command:
+        default:
+            execution:
+                timeout:
+                    enabled: false
+                isolation:
+                    thread:
+                        timeoutInMilliseconds:  60000
