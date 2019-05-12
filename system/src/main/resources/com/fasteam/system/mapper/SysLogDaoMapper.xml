@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.SysLogDao">
+
+    <resultMap id="sysLog" type="com.fasteam.system.domain.SysLog">
+        <result column="id" property="id"/>
+        <result column="type" property="type"/>
+        <result column="userid" property="userId"/>
+        <result column="remark" property="remark"/>
+        <result column="systime" property="sysTime"/>
+        <result column="ip" property="ip"/>
+        <result column="requestUrl" property="requestUrl"/>
+        <result column="action" property="action"/>
+        <result column="module" property="module"/>
+        <result column="feature" property="feature"/>
+
+        <result column="username" property="username"/>
+    </resultMap>
+
+    <select id="listByPage" resultMap="sysLog">
+        SELECT sl.*, su.username
+        FROM sys_log sl, sys_user su
+        <include refid="conditionSql"/>
+        <include refid="orderSql"/>
+        <include refid="pageSql"/>
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT count(1) from sys_log sl, sys_user su
+        <include refid="conditionSql"/>
+    </select>
+
+    <sql id="conditionSql">
+        <where>
+            sl.userid = su.id
+            <if test="query.userIds != null and query.userIds != ''">
+                and sl.userid in (${query.userIds})
+            </if>
+            <if test="query.remark != null and query.remark != ''">
+                <![CDATA[
+                  and sl.remark LIKE '%${query.remark}%'
+                ]]>
+            </if>
+            <if test="query.username != null and query.username != ''">
+                <![CDATA[
+                  and su.username LIKE '%${query.username}%'
+                ]]>
+            </if>
+            <if test="query.type != null and query.type != ''">
+               and sl.type = #{query.type}
+            </if>
+            <if test="query.timeBegin != null and query.timeBegin != ''">
+                <![CDATA[ and sl.systime>=#{query.timeBegin} ]]>
+            </if>
+            <if test="query.timeEnd != null and query.timeEnd != ''">
+                <![CDATA[ and sl.systime<=#{query.timeEnd} ]]>
+            </if>
+        </where>
+    </sql>
+
+    <sql id="pageSql">
+        <if test="page.startIndex != null and page.pageSize != null ">
+            limit #{page.startIndex}, #{page.pageSize}
+        </if>
+    </sql>
+
+    <sql id="orderSql">
+        ORDER BY systime desc
+    </sql>
+
+    <select id="listByUserId" resultMap="sysLog">
+        <![CDATA[
+          SELECT id,type,userid,remark,systime,ip,requestUrl
+          FROM sys_log
+          WHERE userid = #{userId}
+        ]]>
+    </select>
+
+    <!-- 获取活跃的用户ID -->
+    <select id="listActiveUserIds" resultType="java.lang.Integer">
+        <![CDATA[
+			  select userid from (select userid,count(1) as activeCount from sys_log
+		      where systime>=#{startTime} and systime<=#{endTime} and remark not like '%退出系统'
+		      and userid in(select id from sys_user
+                            where (logicDel is null or logicDel <>1)
+                            AND ((validTimeBegin<=NOW() and validTimeEnd >= NOW())
+                            OR (validTimeBegin<=NOW() and validTimeEnd IS null)
+                            OR (validTimeBegin IS null and validTimeEnd IS null)
+                            OR (validTimeBegin IS null and validTimeEnd >= NOW())))
+                            group by userid) a where activeCount > #{activeNum}
+		      order by activeCount desc
+	       ]]>
+    </select>
+
+    <!-- 用于统计一天内用户登录的次数 -->
+    <select id="countLoginSysLog" resultType="java.lang.Integer">
+        SELECT count(1) FROM sys_log
+        WHERE type=1 AND userid=#{userId} AND remark LIKE '%进入系统' AND systime > #{timeStart}
+    </select>
+
+    <insert id="insert">
+        <![CDATA[
+          insert into sys_log(type,userid,remark,ip,action,feature,systime,requestUrl)
+		  values(#{entity.type},#{entity.userId},#{entity.remark},#{entity.ip},#{entity.action},#{entity.feature},now(),#{entity.requestUrl})
+        ]]>
+    </insert>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into sys_log(type,userid,remark,ip,action,module,feature,systime,requestUrl)
+        values
+        <foreach collection="entities" item="entity" index="index" separator=",">
+            (#{entity.type},#{entity.userId},#{entity.remark},#{entity.ip},#{entity.action},#{entity.module},#{entity.feature},#{entity.sysTime},#{entity.requestUrl})
+        </foreach>
+    </insert>
+
+    <delete id="batchDel">
+        DELETE from sys_log where id IN
+        <foreach collection="ids" open="(" close=")" item="id" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

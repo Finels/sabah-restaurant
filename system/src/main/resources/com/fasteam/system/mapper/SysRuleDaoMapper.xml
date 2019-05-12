@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.SysRuleDao">
+
+    <resultMap id="sysRule" type="com.fasteam.system.domain.SysRule">
+        <result column="id" property="id"/>
+        <result column="ruleId" property="ruleId"/>
+        <result column="ruleExp" property="ruleExp"/>
+        <result column="ruleType" property="ruleType"/>
+        <result column="seqStart" property="ruleStart"/>
+        <result column="seqEnd" property="ruleEnd"/>
+        <result column="currentValue" property="currentValue"/>
+        <result column="currentDate" property="currentDate"/>
+        <result column="lastUpdate" property="lastUpdate"/>
+    </resultMap>
+
+    <select id="listByRuleId" resultMap="sysRule">
+        <![CDATA[
+        select * from sys_idrule where ruleId = #{ruleId}
+        ]]>
+    </select>
+
+     <update id="update">
+         update sys_idrule set currentValue = #{currentValue},currentDate=#{currentDate} , lastUpdate=now()
+         where ruleId=#{ruleId}
+     </update>
+
+
+</mapper>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.DictionaryDao">
+
+    <resultMap id="dictionary" type="com.fasteam.system.domain.Dictionary">
+        <result column="id" property="id"/>
+        <result column="type" property="type"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="enabled" property="enabled"/>
+    </resultMap>
+
+    <select id="listByQuery" resultMap="dictionary">
+        select id, type, code, name
+        from dictionary temp <include refid="conditionSql"/>
+    </select>
+
+    <sql id="conditionSql">
+        <where>
+            temp.enabled = 1
+            <if test="query.type != null and query.type != ''">
+                and temp.type = #{query.type}
+            </if>
+        </where>
+    </sql>
+</mapper>

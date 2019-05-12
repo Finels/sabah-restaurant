@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.SysGroupDao">
+
+    <resultMap id="sysGroup" type="com.fasteam.system.domain.SysGroup">
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="fatherId" property="fatherId"/>
+        <result column="pid" property="pid"/>
+        <result column="cid" property="cid"/>
+        <result column="introduction" property="introduction"/>
+        <result column="contactPerson" property="contactPerson"/>
+        <result column="contactPhone" property="contactPhone"/>
+        <result column="topLogo" property="topLogo"/>
+        <result column="createTime" property="createTime"/>
+        <result column="createOperator" property="createOperator"/>
+        <result column="updateTime" property="updateTime"/>
+        <result column="updateOperator" property="updateOperator"/>
+
+        <result column="fatherCode" property="fatherCode"/>
+        <result column="fatherName" property="fatherName"/>
+        <result column="cityName" property="cityName"/>
+    </resultMap>
+
+    <select id="getById" resultType="com.fasteam.system.domain.SysGroup">
+        SELECT sg.*, sg2.name fatherName, sg2.code fatherCode, bac.Name cityName
+        FROM sys_group sg
+        LEFT OUTER JOIN sys_group sg2 ON sg.fatherId = sg2.id
+        LEFT OUTER JOIN base_all_area_code bac ON(sg.pid = bac.PCODE and sg.cid = bac.CODE)
+        WHERE sg.id = #{id};
+    </select>
+
+    <select id="getByCode" resultMap="sysGroup">
+         SELECT sg.* FROM sys_group sg where sg.code = #{code}
+    </select>
+
+    <select id="list" resultMap="sysGroup">
+        select * from sys_group
+    </select>
+
+    <select id="getByFatherId" resultMap="sysGroup" statementType="STATEMENT" parameterType="java.lang.Long">
+        SELECT sg.id,sg.name from sys_group sg where  sg.fatherId = ${fatherId} or sg.id = ${fatherId}
+    </select>
+
+    <select id="listByQuery" resultMap="sysGroup">
+        SELECT sg.* from sys_group sg, sys_user su
+        <include refid="conditionSql"/>
+    </select>
+
+    <sql id="conditionSql">
+        <where>
+            sg.createOperator = su.id and (logicDel != 1 OR logicDel IS NULL)
+            <if test="query.groupName != null and query.groupName != ''">
+                <![CDATA[
+                  and sg.name LIKE '%${query.groupName}%'
+                ]]>
+            </if>
+            <if test="query.fatherGroupId != null and query.fatherGroupId != ''">
+                and sg.fatherId = #{query.fatherGroupId}
+            </if>
+            <if test="query.groupCode != null and query.groupCode != ''">
+                and (sg.code = #{query.groupCode} or sg.code like '${query.groupCode}_%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="countByGroupName" resultType="java.lang.Integer">
+        <![CDATA[
+          select count(1) from sys_group where name = #{groupName}
+        ]]>
+        <if test="id != null and id !=''">
+            and id != #{id}
+        </if>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="entity.id">
+        <![CDATA[
+        insert sys_group(name,code,fatherId,pid,cid,introduction,contactPerson,contactPhone,topLogo,createTime,createOperator)
+        VALUES (#{entity.name}, #{entity.code}, #{entity.fatherId}, #{entity.pid}, #{entity.cid}, #{entity.introduction},
+        #{entity.contactPerson}, #{entity.contactPhone}, #{entity.topLogo},now(), #{entity.createOperator})
+        ]]>
+    </insert>
+
+    <update id="update">
+        <![CDATA[
+        update sys_group
+        set
+                name = #{entity.name},
+                code = #{entity.code},
+                fatherId = #{entity.fatherId},
+                pid = #{entity.pid},
+                cid = #{entity.cid},
+                introduction = #{entity.introduction},
+                contactPerson = #{entity.contactPerson},
+                contactPhone = #{entity.contactPhone},
+                updateOperator = #{entity.updateOperator}
+        where id = #{entity.id}
+        ]]>
+    </update>
+
+    <update id="updateCode">
+        <![CDATA[
+          update sys_group
+          set code = #{code}
+          where id = #{id}
+        ]]>
+    </update>
+
+    <update id="updateLogo">
+        <![CDATA[
+            update sys_group
+            set topLogo = #{topLogo}
+            where id = #{id}
+        ]]>
+    </update>
+
+    <delete id="delByCode">
+        <![CDATA[
+        DELETE from sys_group where code = #{code} or code like '${code}${separator}%'
+        ]]>
+    </delete>
+</mapper>

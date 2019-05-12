@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.BaseAreaCodeDao">
+
+    <resultMap id="baseAreaCode" type="com.fasteam.system.domain.BaseAreaCode">
+        <result column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="pcode" property="pcode"/>
+        <result column="pname" property="pname"/>
+        <result column="level" property="level"/>
+        <result column="alias" property="alias"/>
+    </resultMap>
+
+    <select id="listCityByLevel" resultMap="baseAreaCode">
+        select id, code, name , pcode, pname , level , alias from base_all_area_code
+        where level = #{level}
+    </select>
+
+    <select id="listCityByPCode" resultMap="baseAreaCode">
+        select id, code, name , pcode, pname , level , alias from base_all_area_code
+        where pcode = #{pCode}
+    </select>
+
+    <select id="list" resultMap="baseAreaCode">
+        <![CDATA[
+        select id, code, name , pcode, pname , level , alias from base_all_area_code where level <= 3
+        ]]>
+    </select>
+</mapper>

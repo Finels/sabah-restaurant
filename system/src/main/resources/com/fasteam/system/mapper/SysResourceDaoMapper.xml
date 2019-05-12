@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.SysResourceDao">
+
+    <resultMap id="sysResource" type="com.fasteam.system.domain.SysResource">
+        <result column="id" property="id"/>
+        <result column="fatherId" property="fatherId"/>
+        <result column="name" property="name"/>
+        <result column="uniqueCode" property="uniqueCode"/>
+        <result column="url" property="url"/>
+        <result column="icon" property="icon"/>
+        <result column="headIcon" property="headIcon"/>
+        <result column="summary" property="summary"/>
+        <result column="level" property="level"/>
+        <result column="weight" property="weight"/>
+        <result column="router" property="router"/>
+        <result column="target" property="target"/>
+        <result column="valid" property="valid"/>
+        <result column="type" property="type"/>
+        <result column="block" property="block"/>
+        <result column="styleClass" property="styleClass"/>
+        <result column="authCode" property="authCode"/>
+        <result column="createTime" property="createTime"/>
+        <result column="createOperator" property="createOperator"/>
+        <result column="updateTime" property="updateTime"/>
+        <result column="updateOperator" property="updateOperator"/>
+        <result column="fatherName" property="fatherName"/>
+    </resultMap>
+
+    <select id="getById" resultType="com.fasteam.system.domain.SysResource">
+        select sr.*, (SELECT name FROM sys_resource s WHERE s.id = sr.fatherId) fatherName from sys_resource sr
+        where sr.id = #{id}
+    </select>
+
+    <select id="list" resultMap="sysResource">
+        SELECT * from sys_resource
+    </select>
+
+    <select id="listByPage" resultMap="sysResource">
+        SELECT sr.*, (SELECT name FROM sys_resource s WHERE s.id = sr.fatherId) fatherName
+        FROM sys_resource sr
+        <include refid="conditionSql"/>
+        <include refid="orderSql"/>
+        <include refid="pageSql"/>
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT count(1) from sys_resource sr
+        <include refid="conditionSql"/>
+    </select>
+
+    <sql id="conditionSql">
+        <where>
+            <if test="query.name != null and query.name != ''">
+                <![CDATA[
+                  and sr.name LIKE '%${query.name}%'
+                ]]>
+            </if>
+            <if test="query.uniqueCode != null and query.uniqueCode != ''">
+                <![CDATA[
+                  and sr.uniqueCode  LIKE '%${query.uniqueCode}%'
+                ]]>
+            </if>
+            <if test="query.fatherId != null and query.fatherId != ''">
+                <![CDATA[
+                   and sr.fatherId = #{query.fatherId}
+                ]]>
+            </if>
+            <if test="(query.valid != null and query.valid != '') or query.valid == 0">
+                and sr.valid = #{query.valid}
+            </if>
+        </where>
+    </sql>
+
+    <sql id="pageSql">
+        <if test="page.startIndex != null and page.pageSize != null ">
+            limit #{page.startIndex}, #{page.pageSize}
+        </if>
+    </sql>
+
+    <sql id="orderSql">
+        ORDER BY
+        <choose>
+            <when test="query.order != null and query.order != ''">
+                ${query.order}
+            </when>
+            <otherwise>
+                sr.fatherId DESC
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="countSysResourceByUniqueCode" resultType="java.lang.Integer">
+        <![CDATA[
+        SELECT count(1) from sys_resource where uniqueCode = #{uniqueCode}
+         ]]>
+        <if test="id != null and id != ''">
+            and id != #{id}
+        </if>
+    </select>
+
+    <select id="listUserResources" resultMap="sysResource">
+        SELECT * FROM sys_resource
+        <where>
+            <if test="ids != null and ids.size() > 0">
+                id in
+                <foreach collection="ids" item="id" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="valid != null">
+                and valid = #{valid}
+            </if>
+            <if test="fatherId != null">
+                and fatherId = #{fatherId}
+            </if>
+            <if test="level != null">
+                and level = #{level}
+            </if>
+            <if test="type != null">
+                and type = #{type}
+            </if>
+        </where>
+        order by weight
+    </select>
+
+    <select id="listResourceByUniqueCode" resultMap="sysResource">
+        SELECT * FROM sys_resource
+        <where>
+            <if test="uniqueCode != null and uniqueCode != ''">
+                and uniqueCode = #{uniqueCode}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert">
+        <![CDATA[
+        insert into sys_resource(fatherId,name,uniqueCode,url,summary,icon,headIcon,level,weight,router,target,valid,type,block,styleClass,authCode,createTime,createOperator)
+        VALUES (#{entity.fatherId}, #{entity.name}, #{entity.uniqueCode}, #{entity.url}, #{entity.summary}, #{entity.icon},#{entity.headIcon},
+        #{entity.level}, #{entity.weight},#{entity.router}, #{entity.target} , #{entity.valid}, #{entity.type}, #{entity.block}, #{entity.styleClass}, #{entity.authCode}, now(), #{entity.createOperator})
+        ]]>
+    </insert>
+
+    <update id="update">
+        update sys_resource
+        set    fatherId = #{entity.fatherId},
+               name = #{entity.name},
+               uniqueCode = #{entity.uniqueCode},
+               url = #{entity.url},
+               summary = #{entity.summary},
+               icon = #{entity.icon},
+               headIcon = #{entity.headIcon},
+               level = #{entity.level},
+               weight = #{entity.weight},
+               router = #{entity.router},
+               target = #{entity.target},
+               valid = #{entity.valid},
+               type = #{entity.type},
+               block = #{entity.block},
+               styleClass = #{entity.styleClass},
+               authCode = #{entity.authCode},
+               updateOperator = #{entity.updateOperator},
+               updateTime = NOW()
+        where id = #{entity.id}
+    </update>
+
+    <delete id="delById">
+        DELETE from sys_resource where id = #{id}
+    </delete>
+
+    <delete id="batchDel">
+        delete from sys_resource where id IN
+        <foreach collection="ids" open="(" close=")" item="id" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

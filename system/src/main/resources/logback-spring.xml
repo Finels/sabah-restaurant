@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="context" value="system"/>
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="rollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/${context}.server.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/${context}.server.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>100</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>200MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <pattern>level:%p|$|timestamp:%d{yyyy-MM-dd HH:mm:ss.SSS Z}|$|thread:%t|$|class:%C.%M|$|line:%L|$|throwable:%throwable{1}|$|message:%m%n%throwable{500}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="errorFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <file>${log.path}/${context}.server.error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/${context}.server.error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>100</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>200MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <pattern>level:%p|$|timestamp:%d{yyyy-MM-dd HH:mm:ss.SSS Z}|$|thread:%t|$|class:%C.%M|$|line:%L|$|throwable:%throwable{1}|$|message:%m%n%throwable{500}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.fasteam" level="${log.level:-INFO}"/>
+    <logger name="org.springframework" level="${log.level:-INFO}"/>
+    <logger name="dao" level="DEBUG" />
+    <logger name="com.fasteam.system.dao" level="DEBUG" />
+
+    <root level="${log.level:-INFO}">
+        <appender-ref ref="console"/>
+        <appender-ref ref="rollingFile"/>
+        <appender-ref ref="errorFile"/>
+    </root>
+</configuration>

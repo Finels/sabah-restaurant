@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.SysUserDao">
+
+    <resultMap id="sysUser" type="com.fasteam.system.domain.SysUser">
+        <result column="id" property="id"/>
+        <result column="userName" property="username"/>
+        <result column="password" property="password"/>
+        <result column="userDescribe" property="userDescribe"/>
+        <result column="privilege" property="privilege"/>
+        <result column="personal" property="personal"/>
+        <result column="ukeySerialNo" property="uKeySerialNo"/>
+        <result column="maxTask" property="maxTask"/>
+        <result column="seriesNo" property="seriesNo"/>
+        <result column="userType" property="userType"/>
+        <result column="validTimeBegin" property="validTimeBegin"/>
+        <result column="validTimeEnd" property="validTimeEnd"/>
+        <result column="isRegister" property="isRegister"/>
+        <result column="logicDel" property="logicDel"/>
+        <result column="baseAuthority" property="baseAuthority"/>
+        <result column="company" property="company"/>
+        <result column="telephone" property="telephone"/>
+        <result column="qq" property="qq"/>
+        <result column="email" property="email"/>
+        <result column="address" property="address"/>
+        <result column="name" property="name"/>
+        <result column="keyTypeIds" property="keyTypeIds"/>
+        <result column="isUploadTz" property="isUploadTz"/>
+        <result column="auditing" property="auditing"/>
+        <result column="idCard" property="idCard"/>
+        <result column="groupId" property="groupId"/>
+        <result column="groupName" property="groupName"/>
+        <result column="roleIds" property="roleIds"/>
+        <result column="roleNames" property="roleNames"/>
+        <result column="roleCodes" property="roleCodes"/>
+        <result column="userStatus" property="userStatus"/>
+        <result column="userFrom" property="userFrom"/>
+        <result column="score" property="score"/>
+        <result column="lastPid" property="lastPid"/>
+        <result column="lastCid" property="lastCid"/>
+        <result column="job" property="job"/>
+        <result column="sex" property="sex"/>
+        <result column="createTime" property="createTime"/>
+        <result column="createOperator" property="createOperator"/>
+        <result column="updateTime" property="updateTime"/>
+        <result column="updateOperator" property="updateOperator"/>
+    </resultMap>
+
+    <select id="getById" resultType="com.fasteam.system.domain.SysUser">
+        select su.*, sg.name groupName, sg.code groupCode
+        from sys_user su LEFT OUTER JOIN sys_group sg ON su.groupId = sg.id
+        where su.groupId = sg.id and su.id = #{id}
+    </select>
+
+    <select id="getByUsernameAndPwd" resultMap="sysUser">
+        SELECT su.id,su.username,password,su.name name,su.idCard idCard,su.telephone, su.roleCodes,su.personal,su.groupId,su.roleIds,
+         sg.code groupCode, sg.fatherId fatherGroupId, sg.name groupName, sg.topLogo topLogo,
+         ifnull(su.pid, sg.pid) lastPid, ifnull(su.cid, sg.cid) lastCid, su.logicDel, validTimeBegin, validTimeEnd
+        from sys_user su LEFT OUTER JOIN sys_group sg ON su.groupId = sg.id
+        where su.username = #{username} and su.password = #{password}
+    </select>
+
+    <select id="getByUsername" resultType="com.fasteam.security.dto.LoginUser">
+        SELECT id,name,password from sys_user where username = #{username}
+    </select>
+
+    <select id="getByIdCard" resultType="com.fasteam.security.dto.LoginUser">
+        SELECT id,userName as username,password from sys_user where idCard = #{idCard}
+        and (logicDel<![CDATA[<>]]>1 or logicDel is null)
+    </select>
+
+    <select id="getKeyTypeIdsById" resultType="java.lang.String">
+        select keyTypeIds from sys_user where id=#{id}
+    </select>
+
+    <select id="list" resultMap="sysUser">
+        select * from sys_user
+    </select>
+
+    <!-- 本机构用户 -->
+    <select id="listGroupUsers" resultMap="sysUser">
+        select id,name from sys_user where groupId = #{groupId} and (logicDel != 1 OR logicDel IS NULL)
+    </select>
+
+    <!-- 下级机构用户 -->
+    <select id="listLowGroupUsers" resultMap="sysUser">
+        <![CDATA[
+		select id from sys_user where groupId in (select id from
+		sys_group where code like '${groupCode}_%') and (logicDel != 1 OR logicDel IS NULL)
+		]]>
+    </select>
+
+    <!-- 上级机构用户 -->
+    <select id="listSuperGroupUsers" resultMap="sysUser">
+        select id from sys_user where groupId in (select id from
+        sys_group where code in(${groupCodes})) and (logicDel != 1 OR logicDel IS NULL)
+    </select>
+
+    <select id="listByRoleId" resultMap="sysUser">
+        SELECT id,roleIds,roleNames,roleCodes from sys_user where  ',' + roleIds + ',' like '%,${roleId},%'
+    </select>
+
+    <select id="listByPage" resultMap="sysUser">
+        SELECT su.*, sg.name groupName
+        FROM sys_user su LEFT OUTER JOIN sys_group sg ON su.groupId = sg.id
+        <include refid="conditionSql"/>
+        <include refid="orderSql"/>
+        <include refid="pageSql"/>
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT count(1) from sys_user su LEFT OUTER JOIN sys_group sg ON su.groupId = sg.id
+        <include refid="conditionSql"/>
+    </select>
+
+    <sql id="conditionSql">
+        <where>
+            (logicDel != 1 OR logicDel IS NULL) and username != 'superAdmin'
+            <if test="query.id != null and query.id != ''">
+                and su.id = #{query.id}
+            </if>
+            <if test="query.username != null and query.username != ''">
+                <![CDATA[
+                  and su.username LIKE '%${query.username}%'
+                ]]>
+            </if>
+            <if test="query.name != null and query.name != ''">
+                <![CDATA[
+                  and su.name  LIKE '%${query.name}%'
+                ]]>
+            </if>
+            <if test="query.groupCode != null and query.groupCode != ''">
+                and (sg.code = #{query.groupCode} or sg.code like  '${query.groupCode}_%')
+            </if>
+            <if test="query.selectGroupCode != null and query.selectGroupCode != ''">
+                and sg.code = #{query.selectGroupCode}
+            </if>
+            <if test="query.roleId != null and query.roleId != ''">
+                and su.roleIds LIKE '%${query.roleId}%'
+            </if>
+            /*1：有效*/
+            <if test="query.valid == 1">
+                <![CDATA[
+                and ((su.validTimeBegin is null and su.validTimeEnd is null)
+                      or (su.validTimeBegin <= NOW() and su.validTimeEnd >= NOW())
+                      or (validTimeBegin <= NOW() and validTimeEnd is null)
+                      or (validTimeBegin is null and validTimeEnd >= NOW()))
+              ]]>
+            </if>
+            /*0：无效*/
+            <if test="query.valid == 0">
+                <![CDATA[
+                and (su.validTimeBegin > NOW() or su.validTimeEnd < NOW())
+              ]]>
+            </if>
+            <if test="query.auditing != null">
+                and su.auditing = #{query.auditing}
+            </if>
+        </where>
+    </sql>
+
+    <sql id="pageSql">
+        <if test="page.startIndex != null and page.pageSize != null ">
+            limit #{page.startIndex}, #{page.pageSize}
+        </if>
+    </sql>
+
+    <sql id="orderSql">
+        ORDER BY
+        <choose>
+            <when test="query.order != null">
+                ${query.order}
+            </when>
+            <otherwise>
+                su.updateTime DESC
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="countByUsername" resultType="java.lang.Integer">
+        <![CDATA[
+          select count(1) from sys_user where username = #{username}
+        ]]>
+        <if test="logicDel == 1">
+            and logicDel = 1
+        </if>
+        <if test="logicDel == 0">
+            and (logicDel = '' or logicDel is NULL )
+        </if>
+    </select>
+
+    <insert id="insert">
+        <![CDATA[
+        insert sys_user(username,password,uKeySerialNo,maxTask,validTimeBegin,validTimeEnd,baseAuthority,company,idCard,telephone,qq,email,
+                         address,name,auditing,groupId,roleIds,roleNames,roleCodes,userStatus,userFrom,createTime,createOperator)
+        VALUES (#{entity.username}, #{entity.password}, #{entity.uKeySerialNo}, #{entity.maxTask}, #{entity.validTimeBegin}, #{entity.validTimeEnd},
+                 #{entity.baseAuthority}, #{entity.company}, #{entity.idCard}, #{entity.telephone}, #{entity.qq}, #{entity.email}, #{entity.address},
+                 #{entity.name}, #{entity.auditing}, #{entity.groupId}, #{entity.roleIds}, #{entity.roleNames}, #{entity.roleCodes},
+                 #{entity.userStatus}, #{entity.userFrom},now(), #{entity.createOperator})
+        ]]>
+    </insert>
+
+    <update id="update">
+        <![CDATA[
+            update sys_user
+            set
+                    username = #{entity.username},
+                    uKeySerialNo = #{entity.uKeySerialNo},
+                    maxTask = #{entity.maxTask},
+                    validTimeBegin = #{entity.validTimeBegin},
+                    validTimeEnd = #{entity.validTimeEnd},
+                    baseAuthority = #{entity.baseAuthority},
+                    company = #{entity.company},
+                    idCard = #{entity.idCard},
+                    telephone = #{entity.telephone},
+                    qq = #{entity.qq},
+                    email = #{entity.email},
+                    address = #{entity.address},
+                    name = #{entity.name},
+                    auditing = #{entity.auditing},
+                    groupId = #{entity.groupId},
+                    roleIds = #{entity.roleIds},
+                    roleNames = #{entity.roleNames},
+                    roleCodes = #{entity.roleCodes},
+                    userStatus = #{entity.userStatus},
+                    userFrom = #{entity.userFrom},
+                    updateOperator = #{entity.updateOperator}
+            where  id = #{entity.id}
+           ]]>
+    </update>
+
+    <update id="updateInfo">
+        <![CDATA[
+        update sys_user
+            set
+                name = #{entity.name},
+                company = #{entity.company},
+                idCard = #{entity.idCard},
+                telephone = #{entity.telephone},
+                job = #{entity.job},
+                sex = #{entity.sex}
+            where  id = #{entity.id}
+           ]]>
+    </update>
+
+    <update id="registerUser">
+        <![CDATA[
+            update sys_user
+            set
+                name = #{entity.name},
+                company = #{entity.company},
+                telephone = #{entity.telephone},
+                qq = #{entity.qq},
+                email = #{entity.email},
+                auditing = #{entity.auditing},
+                pid = #{entity.pid},
+                cid = #{entity.cid}
+            where  id = #{entity.id}
+        ]]>
+    </update>
+
+    <update id="updatePassword">
+        update sys_user
+        set password = #{password}
+        where id = #{id}
+    </update>
+
+    <update id="activateUser">
+        UPDATE sys_user
+        set logicDel = NULL,
+        password = #{password},
+        groupId = #{groupId},
+        updateTime = NOW()
+        where username = #{username}
+        and logicDel = 1
+    </update>
+
+    <update id="updateKeyTypeIdsById">
+        update sys_user set keyTypeIds=#{keyTypeIds} where id=#{id}
+    </update>
+
+    <update id="updateScoreByUserId">
+        update sys_user set score = ifnull(score, 0) + #{score} where id=#{id}
+    </update>
+
+    <update id="updateRole">
+        update sys_user
+        set roleCodes = #{roleCodes},
+        roleNames = #{roleNames}
+        where id = #{id}
+    </update>
+
+    <delete id="delById">
+        UPDATE sys_user set logicDel = 1 where id = #{id}
+    </delete>
+
+    <delete id="batchDel">
+        UPDATE SYS_USER SET logicDel = 1 where id IN
+        <foreach collection="ids" open="(" close=")" item="id" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="delByGroupCode">
+        UPDATE sys_user set logicDel = 1
+        where groupId in(select id from sys_group where code = #{groupCode} or code like '${groupCode}_%')
+    </delete>
+</mapper>

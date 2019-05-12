@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.system.dao.SysRoleDao">
+
+    <resultMap id="sysRole" type="com.fasteam.system.domain.SysRole">
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="summary" property="summary"/>
+        <result column="resources" property="resources"/>
+        <result column="weight" property="weight"/>
+        <result column="type" property="type"/>
+        <result column="level" property="level"/>
+        <result column="dataArea" property="dataArea"/>
+        <result column="baseDataScope" property="baseDataScope"/>
+        <result column="findDataScope" property="findDataScope"/>
+        <result column="findDataScopeName" property="findDataScopeName"/>
+        <result column="share" property="share"/>
+        <result column="createTime" property="createTime"/>
+        <result column="createOperator" property="createOperator"/>
+        <result column="username" property="username"/>
+    </resultMap>
+
+    <select id="getById" resultType="com.fasteam.system.domain.SysRole">
+        select * from sys_role sr
+        where sr.id = #{id}
+    </select>
+
+    <select id="list" resultMap="sysRole">
+        SELECT * from sys_role
+    </select>
+
+    <select id="listByIds" resultMap="sysRole">
+        SELECT resources,dataArea,share, baseDataScope, findDataScope  FROM sys_role
+        where id
+        in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+    </select>
+
+    <select id="listByGroupCode" resultMap="sysRole">
+        <![CDATA[
+    		select * from sys_role as r
+    		where createOperator in (
+				select u.id from sys_user as u , sys_group as g
+                where (code = #{groupCode} or code like '${groupCode}_%')
+                and u.groupid=g.id and (u.logicDel != 1 OR u.logicDel IS NULL))
+    	]]>
+    </select>
+
+    <select id="listByPage" resultMap="sysRole">
+        SELECT sr.*,su.username
+        FROM sys_role sr, sys_user su, sys_group sg
+        <include refid="conditionSql"/>
+        <include refid="orderSql"/>
+        <include refid="pageSql"/>
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT count(1) from sys_role sr, sys_user su, sys_group sg
+        <include refid="conditionSql"/>
+    </select>
+
+    <select id="listFindData" resultType="java.util.Map">
+        SELECT categoryCode, category from c_keytype GROUP BY categoryCode,category
+    </select>
+
+    <sql id="conditionSql">
+        <where>
+            sr.createOperator = su.id AND sg.id = su.groupId and (su.logicDel != 1 OR su.logicDel IS NULL)
+            <if test="query.name != null and query.name != ''">
+                <![CDATA[
+                  and sr.name LIKE '%${query.name}%'
+                ]]>
+            </if>
+            <if test="query.groupCode != null and query.groupCode != ''">
+                and (sg.code = #{query.groupCode} OR sg.code LIKE '${query.groupCode}_%')
+            </if>
+        </where>
+    </sql>
+
+    <sql id="pageSql">
+        <if test="page.startIndex != null and page.pageSize != null ">
+            limit #{page.startIndex}, #{page.pageSize}
+        </if>
+    </sql>
+
+    <sql id="orderSql">
+        ORDER BY
+        <choose>
+            <when test="query.order != null and query.order != ''">
+                ${query.order}
+            </when>
+            <otherwise>
+                sr.createTime DESC
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="countByName" resultType="java.lang.Integer">
+        <![CDATA[
+        SELECT count(1) from sys_role where name = #{name}
+         ]]>
+        <if test="id != null and id != ''">
+            and id != #{id}
+        </if>
+    </select>
+
+    <insert id="insert">
+        <![CDATA[
+        insert sys_role(name,code,resources,dataArea,share,baseDataScope, findDataScope,findDataScopeName,summary,weight,type,level,createTime,createOperator)
+        VALUES (#{entity.name}, #{entity.code}, #{entity.resources}, #{entity.dataArea}, #{entity.share},#{entity.baseDataScope},#{entity.findDataScope},#{entity.findDataScopeName},
+        #{entity.summary}, #{entity.weight}, #{entity.type} , #{entity.level},now(), #{entity.createOperator})
+        ]]>
+    </insert>
+
+    <update id="update">
+          update sys_role
+          set
+                name = #{entity.name},
+                code = #{entity.code},
+                summary = #{entity.summary},
+                weight = #{entity.weight},
+                type = #{entity.type},
+                level = #{entity.level}
+          where id = #{entity.id}
+    </update>
+
+    <update id="updateAuthorization">
+        update sys_role
+        set
+            resources = #{entity.resources},
+            dataArea = #{entity.dataArea},
+            share = #{entity.share},
+            baseDataScope = #{entity.baseDataScope},
+            findDataScope = #{entity.findDataScope},
+            findDataScopeName = #{entity.findDataScopeName}
+        where id = #{entity.id}
+    </update>
+
+    <delete id="delById">
+        DELETE from sys_role where id = #{id}
+    </delete>
+
+    <delete id="batchDel">
+        DELETE FROM SYS_ROLE WHERE ID IN
+        <foreach collection="ids" open="(" close=")" item="id" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
