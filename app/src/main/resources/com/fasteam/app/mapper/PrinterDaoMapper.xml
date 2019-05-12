@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.app.dao.PrinterDao">
+
+    <resultMap id="printer" type="com.fasteam.app.domain.Printer">
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="backup" property="backup"/>
+        <result column="sn" property="sn"/>
+        <result column="key" property="key"/>
+        <result column="status" property="status"/>
+    </resultMap>
+
+
+    <select id="count" resultType="Long">
+        select COUNT(*) from printer
+    </select>
+
+    <select id="listByPage" resultMap="printer">
+        select * from printer temp
+        where temp.createOperator = #{query.createOperator}
+        <include refid="orderSql"/>
+        <include refid="pageSql"/>
+    </select>
+
+    <insert id="insert">
+        <![CDATA[
+
+          insert into printer(name,backup,sn,key,createOperator)
+		  values(#{entity.name},#{entity.backup},#{entity.sn},#{entity.key},#{entity.createOperator})
+
+        ]]>
+    </insert>
+
+    <delete id="delById">
+        DELETE from printer where id = #{id}
+    </delete>
+
+    <sql id="orderSql">
+        ORDER BY
+        <choose>
+            <when test="query.order != null and query.order != ''">
+                ${query.order}
+            </when>
+            <otherwise>
+                id DESC
+            </otherwise>
+        </choose>
+    </sql>
+
+
+    <sql id="pageSql">
+        <if test="page.startIndex != null and page.pageSize != null ">
+            limit #{page.startIndex}, #{page.pageSize}
+        </if>
+    </sql>
+
+</mapper>

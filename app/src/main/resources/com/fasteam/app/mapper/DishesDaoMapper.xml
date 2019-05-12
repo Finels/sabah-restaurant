@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fasteam.app.dao.DishesDao">
+
+    <resultMap id="dishes" type="com.fasteam.app.domain.Dishes">
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="introduce" property="introduce"/>
+        <result column="extra" property="extra"/>
+        <result column="price" property="price"/>
+        <result column="reserve" property="reserve"/>
+        <result column="printerLink" property="printerLink"/>
+        <result column="printerLinkName" property="printerLinkName"/>
+        <result column="type" property="type"/>
+    </resultMap>
+
+
+    <select id="count" resultType="Long">
+        select COUNT(*) from dishes
+    </select>
+
+    <select id="listByPage" resultMap="dishes">
+        select * from dishes temp
+        <include refid="conditionSql"/>
+        <include refid="orderSql"/>
+        <include refid="pageSql"/>
+    </select>
+
+
+    <insert id="insert">
+        <![CDATA[
+          insert into dishes(name,introduce,extra,price,reserve,printerLink,type)
+		  values(#{entity.name},#{entity.introduce},#{entity.extra},#{entity.price},#{entity.reserve},#{entity.printerLink},#{entity.type})
+        ]]>
+    </insert>
+
+    <sql id="orderSql">
+        ORDER BY
+        <choose>
+            <when test="query.order != null and query.order != ''">
+                ${query.order}
+            </when>
+            <otherwise>
+                createTime DESC
+            </otherwise>
+        </choose>
+    </sql>
+
+
+    <sql id="pageSql">
+        <if test="page.startIndex != null and page.pageSize != null ">
+            limit #{page.startIndex}, #{page.pageSize}
+        </if>
+    </sql>
+
+    <sql id="conditionSql">
+        WHERE 1=1
+        <if test="query.type!=null and query.type!=''">
+            <![CDATA[
+          and temp.type = #{query.type}
+        ]]>
+        </if>
+    </sql>
+</mapper>
